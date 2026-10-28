@@ -8,6 +8,8 @@ from minisweagent import Agent, Environment, Model
 _AGENT_MAPPING = {
     "default": "minisweagent.agents.default.DefaultAgent",
     "interactive": "minisweagent.agents.interactive.InteractiveAgent",
+    "self_check": "minisweagent.agents.self_check.SelfCheckAgent",
+    "independent_review": "minisweagent.agents.independent_review.IndependentReviewAgent",
 }
 
 
