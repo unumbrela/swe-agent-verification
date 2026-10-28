@@ -1,0 +1,20 @@
+# Improvement B: hold back the first submission for one acceptance-criteria self-review.
+# Stack after swebench.yaml, e.g. -c swebench.yaml -c configs/deepseek.yaml -c configs/no_network.yaml -c configs/self_check.yaml
+agent:
+  agent_class: self_check
+  max_reviews: 1
+  review_template: |
+    <self_review>
+    Your submission is ON HOLD for one self-review round. You may (and should) continue working now.
+
+    1. Re-read the PR description and write down its acceptance criteria as a numbered list: every behavior it asks for,
+       including use cases it explicitly mentions, edge cases, and backward compatibility
+       (e.g. a deprecation path when a public API argument is renamed or removed).
+    2. For each criterion, write a check that prints EXPECTED and ACTUAL values. State the expected value before running it.
+       "No exception raised" is NOT sufficient: check that the result is correct.
+    3. Run these checks, plus the repository's existing tests for every module you modified.
+    4. Look back at your earlier observations. If any output contradicted the behavior the PR asks for, treat it as a bug
+       to fix. Do not dismiss evidence just to keep the change minimal.
+    5. Fix whatever fails, then recreate patch.txt and submit again with exactly the same submit command.
+       This second submission will be accepted.
+    </self_review>

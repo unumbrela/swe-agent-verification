@@ -1,0 +1,9 @@
+# Model overlay: stack after a base config, e.g. -c swebench.yaml -c configs/deepseek.yaml
+# API key / base url live in the global .env (mini-extra config), not here.
+model:
+  model_name: "openai/deepseek-v4-pro"
+  cost_tracking: "ignore_errors"
+  model_kwargs:
+    api_base: "https://xhyapi.com/v1"
+    drop_params: true
+    parallel_tool_calls: true

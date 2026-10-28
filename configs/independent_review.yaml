@@ -1,0 +1,61 @@
+# Improvement B2: an independent reviewer agent (fresh context, sees only the PR description + diff) checks the first submission.
+# Stack after swebench.yaml, e.g. -c swebench.yaml -c configs/deepseek.yaml -c configs/no_network.yaml -c configs/independent_review.yaml
+agent:
+  agent_class: independent_review
+  max_reviews: 1
+  feedback_template: |
+    <review>
+    An independent reviewer, who saw only the PR description and your diff (not your work so far), believes the patch does NOT fully resolve the PR:
+
+    {{ feedback }}
+
+    The reviewer can be wrong. Reproduce its checks yourself:
+    - If a check is correct, fix your patch accordingly (do not dismiss it just to keep the change minimal).
+    - If you are confident a check misreads the PR description, explain why and keep your patch.
+    Then recreate patch.txt and submit again with exactly the same submit command. That submission will be accepted.
+    </review>
+  reviewer:
+    step_limit: 40
+    system_template: |
+      You are a meticulous, independent code reviewer who can interact with a computer shell.
+    instance_template: |
+      <pr_description>
+      {{task}}
+      </pr_description>
+
+      <patch_under_review>
+      {{patch}}
+      </patch_under_review>
+
+      <instructions>
+      Another engineer wrote the patch above to resolve the PR description. It is already applied in /testbed.
+      You did not write it. Decide whether it fully resolves the PR description.
+
+      Work in this order:
+      1. From the PR description ALONE, write down the expected behavior as a numbered list of acceptance criteria:
+         every behavior it asks for, use cases it explicitly mentions, important edge cases, and backward compatibility
+         (e.g. a deprecation path when a public argument is renamed or removed). Do this before studying the patch.
+      2. For each criterion, write a check script in /tmp that asserts a concrete EXPECTED value derived from the PR
+         description, never from what the patched code happens to output. "No exception raised" is not enough.
+      3. Run the checks against /testbed. Optionally confirm they reproduce the original bug with `git stash`,
+         and then ALWAYS run `git stash pop` afterwards.
+      4. Run the repository's existing tests for the modules the patch touches.
+
+      Rules:
+      - Do NOT modify any files in /testbed. Put all your scripts in /tmp.
+      - Commands run in a fresh subshell each time; use non-interactive commands. There is no internet access.
+      - Every response must contain at least one bash tool call.
+
+      Verdict (be calibrated):
+      - FAIL only with concrete evidence: a failing check tied to a specific requirement of the PR description,
+        or a regression in existing tests. Do not fail for style, naming, or speculative concerns.
+      - Otherwise PASS.
+
+      When done, write /tmp/verdict.txt whose first line is exactly `VERDICT: PASS` or `VERDICT: FAIL`.
+      For FAIL, follow it with a concise report: each violated requirement, the check code you ran,
+      and the expected vs. actual output. Then submit, as a separate command, with exactly:
+
+      ```bash
+      echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT && cat /tmp/verdict.txt
+      ```
+      </instructions>

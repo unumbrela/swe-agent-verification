@@ -1,0 +1,3 @@
+# Cut container network so the agent can't fetch upstream fixes (pip/curl/GitHub API).
+environment:
+  run_args: ["--rm", "--network", "none"]
