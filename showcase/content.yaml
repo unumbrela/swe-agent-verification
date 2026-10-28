@@ -1,0 +1,66 @@
+title: 让代码 Agent 检查自己的修复
+subtitle: 基于 mini-swe-agent · DeepSeek-v4-pro · SWE-bench Verified 50 题
+
+summary: 先修好评测里的泄漏，再试了两种"提交前验证"：自检和独立审查。两者都没有带来收益。转而从多次运行中挑选补丁后，listwise 对比选择带来了第一个正向信号。
+
+noise: 同一配置重跑，约 8% 的题会翻转。50 题上相差 2 题以内都不可信。
+
+runs:
+  - key: baseline
+    label: 基线（联网）
+    note: 作废：Agent 联网抄了上游修复
+    void: true
+  - key: baseline_nonet
+    label: 基线（断网）
+    note: 正式基线
+  - key: self_check
+    label: B · 提交前自检
+    note: 自检只改动了 3 题的补丁
+  - key: review
+    label: B2 · 独立审查
+    note: 新上下文的审查 Agent 只看 issue + diff
+  - key: review_first
+    base: review
+    label: B2 · 首次提交
+    note: 反事实：去掉审查后的分数
+
+selection:
+  pass1: 随机挑一个
+  majority: 多数投票
+  pointwise: Pointwise 打分
+  listwise: Listwise 对比
+  oracle: Oracle（pass@3）
+
+findings:
+  - title: 评测有泄漏
+    body: 容器默认联网。16/50 题里 Agent 主动下载新版本或搜到别人的答案。断网后基线从 82% 校正为 78%。
+    link: "#/instance/sympy__sympy-23950"
+  - title: 失败不在于找不到代码
+    body: 9 个失败题里定位错误为 0。主因是理解偏差（5/9）：模型看到了矛盾，却以"最小改动"为由放过。
+    link: "#/experiments"
+  - title: 自检是橡皮图章
+    body: 同一个模型带着同一段上下文自检，会把"预期值"写成和现有实现一致。50 题只改动了 3 个补丁。
+    link: "#/instance/django__django-15957"
+  - title: 上下文独立 ≠ 判断独立
+    body: 只看 issue + diff 的审查者只抓到 2/8 个错误补丁，误报 3 次。同一个模型会犯相关的错误。
+    link: "#/instance/django__django-12273"
+  - title: 不重跑也能剥离噪声
+    body: 把被驳回题的首次提交也拿去评测，得到同一次运行里"有/无审查"的对比：两者都是 42/50，审查贡献为 0。
+    link: "#/experiments"
+  - title: 全局 AUROC 会骗人
+    body: Pointwise 打分的 AUROC 是 0.735，但只用"题目平均分"也有 0.740；同一题内排序只有 0.424，低于随机。
+    link: "#/verifier"
+  - title: 对比比打分有效
+    body: 把候选放在一起比较，模型能找到行为差异。8 道可改进题上从 4.0 提到 5.3（p = 0.08）。
+    link: "#/verifier"
+
+failures:
+  django__django-12273: {cause: 理解偏差, text: 第 54 步已写出与官方相同的改动，第 61 步为"保持最小改动"又删掉。}
+  django__django-15957: {cause: 理解偏差, text: 第 32 步注意到输出与 issue 期望（每类各取几条）矛盾，自我说服后忽略。}
+  django__django-12325: {cause: 理解偏差, text: 已有测试固化了旧行为，模型为保住该测试没改到 issue 要求的行为。}
+  matplotlib__matplotlib-25479: {cause: 理解偏差, text: 在调用方修补；官方在注册处和 __eq__ 修，后者难从 issue 推出。}
+  pydata__xarray-3993: {cause: 理解偏差, text: 直接改了参数名，没做 issue 里明确问到的 deprecation 过渡。}
+  django__django-11087: {cause: 修复不完整, text: 只 select 了主键和外键，漏了被其他关系引用的字段（to_field）。}
+  django__django-11734: {cause: 修复不完整, text: 官方改 3 处，模型改 1 处；不再崩溃但结果错，只验证了"不报错"。}
+  pydata__xarray-6461: {cause: 修复错误, text: 第 33 步自己的边界用例输出已暴露 bug，仍然提交。}
+  astropy__astropy-13398: {cause: 测试依赖, text: issue 是功能提案，隐藏测试依赖新 API；改动还破坏了 5 个已有测试。}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>让代码 Agent 检查自己的修复</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/"><span class="spark" aria-hidden="true">✳</span>检查自己的修复</a>
+    <nav>
+      <a href="#/" data-nav="overview">概览</a>
+      <a href="#/experiments" data-nav="experiments">实验</a>
+      <a href="#/verifier" data-nav="verifier">验证者</a>
+    </nav>
+  </header>
+  <main id="app" tabindex="-1"></main>
+  <footer class="footer">数据来自 <code>runs/</code>，由后端实时计算。</footer>
+  <script src="app.js" type="module"></script>
+</body>
+</html>
