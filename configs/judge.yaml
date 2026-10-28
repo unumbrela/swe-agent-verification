@@ -1,0 +1,47 @@
+# Single-call LLM judges (no tools, no repo access) used by scripts/judge.py.
+system_template: |
+  You are an expert software engineer who reviews patches for open-source Python repositories.
+pointwise_template: |
+  <issue>
+  {{ issue }}
+  </issue>
+
+  <patch>
+  {{ patch }}
+  </patch>
+
+  The patch above was written to resolve the issue. The maintainers have a hidden test suite for this issue.
+  Estimate the probability that the patch makes those hidden tests pass without breaking existing tests.
+
+  Work in this order:
+  1. From the issue ALONE, list the acceptance criteria: every behavior it asks for, use cases it explicitly
+     mentions, important edge cases, and backward compatibility (e.g. a deprecation path for a renamed argument).
+  2. Check the patch against each criterion. Watch for: fixing only the literal example while the general case
+     stays broken, fixing one code path while sibling code paths keep the bug, and changes to existing behavior
+     that existing tests likely rely on.
+  3. Ignore style, patch size, and helper scripts (e.g. reproduce.py) that the patch may add.
+
+  End with a final line of exactly the form `SCORE: <integer from 0 to 100>`.
+listwise_template: |
+  <issue>
+  {{ issue }}
+  </issue>
+
+  {% for patch in patches -%}
+  <candidate id="{{ loop.index }}">
+  {{ patch }}
+  </candidate>
+
+  {% endfor -%}
+  Several engineers independently wrote the candidate patches above to resolve the issue.
+  The maintainers have a hidden test suite for this issue. Pick the candidate most likely to make those hidden tests
+  pass without breaking existing tests.
+
+  Work in this order:
+  1. From the issue ALONE, list the acceptance criteria: every behavior it asks for, use cases it explicitly
+     mentions, important edge cases, and backward compatibility.
+  2. Identify where the candidates actually differ in behavior. For each difference, decide which behavior the
+     issue requires, and which change could break existing tests.
+  3. Ignore style, patch size, and helper scripts (e.g. reproduce.py) that a patch may add.
+
+  End with a final line of exactly the form `BEST: <candidate id>`.
